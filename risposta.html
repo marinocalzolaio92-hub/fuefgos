@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Risposta Candidatura — Fuego's Clan</title>
+  <link rel="icon" href="logo.jpg" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --pink: #ff00cc; --purple: #9900ff; --bg: #0a0014; --card: #130022;
+      --green: #00ff88; --red: #ff4444; --muted: #a07cbf;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background: var(--bg); color: #fff;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 20px; text-align: center;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background: radial-gradient(ellipse at center, #9900ff11 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .card {
+      background: var(--card); border-radius: 24px; padding: 52px 48px;
+      max-width: 560px; width: 100%; position: relative; overflow: hidden;
+      border: 1px solid #9900ff44;
+      box-shadow: 0 0 60px #9900ff22;
+    }
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, var(--purple), var(--pink));
+    }
+    .logo { width: 80px; border-radius: 50%; border: 3px solid var(--pink);
+      box-shadow: 0 0 20px #ff00cc88; margin-bottom: 24px; }
+    .badge {
+      display: inline-block; padding: 6px 20px; border-radius: 999px;
+      font-size: .8rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .badge.accept { background: rgba(0,255,136,.15); color: var(--green); border: 1px solid var(--green); }
+    .badge.reject { background: rgba(255,68,68,.15); color: var(--red); border: 1px solid var(--red); }
+    h1 { font-family: 'Orbitron', sans-serif; font-size: 1.8rem; font-weight: 900; margin-bottom: 12px; }
+    h1.accept { color: var(--green); text-shadow: 0 0 20px #00ff8888; }
+    h1.reject { color: var(--red); text-shadow: 0 0 20px #ff444488; }
+    .emoji { font-size: 4rem; margin-bottom: 16px; display: block; }
+    p { color: var(--muted); line-height: 1.7; font-size: 1.05rem; margin-bottom: 16px; }
+    .info-box {
+      background: rgba(255,255,255,.04); border: 1px solid #9900ff33;
+      border-radius: 12px; padding: 16px 20px; margin: 24px 0; text-align: left;
+    }
+    .info-box span { display: flex; justify-content: space-between; padding: 4px 0;
+      border-bottom: 1px solid #ffffff0a; font-size: .92rem; }
+    .info-box span:last-child { border: none; }
+    .info-box .label { color: var(--muted); }
+    .info-box .value { color: #fff; font-weight: 600; }
+
+
+
+    .btn {
+      display: inline-block; padding: 14px 32px;
+      border-radius: 8px; font-family: 'Orbitron', sans-serif;
+      font-size: .82rem; font-weight: 700; letter-spacing: 1.5px;
+      text-decoration: none; text-transform: uppercase;
+      cursor: pointer; border: none; transition: all .2s;
+    }
+    .btn-accept {
+      background: linear-gradient(135deg, #00cc66, #00ff88);
+      color: #000; box-shadow: 0 0 20px #00ff8844;
+      margin-right: 12px;
+    }
+    .btn-accept:hover { transform: translateY(-3px); box-shadow: 0 0 30px #00ff8888; }
+    .btn-back {
+      background: transparent; color: var(--pink);
+      border: 2px solid var(--pink); box-shadow: 0 0 10px #ff00cc33;
+    }
+    .btn-back:hover { background: var(--pink); color: #fff; transform: translateY(-3px); }
+    .btn-reject {
+      background: linear-gradient(135deg, #cc0000, #ff4444);
+      color: #fff; box-shadow: 0 0 20px #ff444444;
+    }
+    .btn-reject:hover { transform: translateY(-3px); }
+
+    #status-msg { margin-top: 16px; font-size: .88rem; color: var(--muted); min-height: 20px; }
+    #status-msg.ok { color: var(--green); }
+    #status-msg.err { color: var(--red); }
+
+    .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; display: none; }
+    .confetti-piece {
+      position: absolute; width: 8px; height: 8px; border-radius: 2px;
+      animation: confettiFall linear forwards;
+    }
+    @keyframes confettiFall {
+      from { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      to   { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="confetti" id="confetti"></div>
+
+<div class="card" id="mainCard">
+  <img src="logo.jpg" alt="logo" class="logo" />
+
+  <!-- Contenuto iniettato da JS -->
+  <div id="content">
+    <span class="emoji">⏳</span>
+    <p>Caricamento...</p>
+  </div>
+</div>
+
+<script>
+  const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1571944580776067277/ZFLiht5zbkMbgZ5OOsHZBl8Hluz0ixQc6lxlyMSfKEI72x6N4tSUjrK0qesGTUwzbH4b';
+
+  const params = new URLSearchParams(window.location.search);
+  const azione   = params.get('azione');
+  const nome     = params.get('nome')    || 'Candidato';
+  const discord  = params.get('discord') || 'N/D';
+  const id       = params.get('id')      || '???';
+
+  const isAccept = azione === 'accetta';
+  const content  = document.getElementById('content');
+
+  content.innerHTML = `
+    <span class="emoji">${isAccept ? '🏆' : '😔'}</span>
+    <div class="badge ${isAccept ? 'accept' : 'reject'}">${isAccept ? '✅ ACCETTA' : '❌ RIFIUTA'}</div>
+    <h1 class="${isAccept ? 'accept' : 'reject'}">${isAccept ? 'Benvenuto nel Clan!' : 'Candidatura Rifiutata'}</h1>
+    <p>${isAccept
+      ? `Stai per <strong>accettare</strong> la candidatura di <strong>${nome}</strong> nel Fuego's Clan!`
+      : `Stai per <strong>rifiutare</strong> la candidatura di <strong>${nome}</strong>.`
+    }</p>
+
+    <div class="info-box">
+      <span><span class="label">👤 Candidato</span><span class="value">${nome}</span></span>
+      <span><span class="label">💬 Discord</span><span class="value">${discord}</span></span>
+      <span><span class="label">📋 ID Candidatura</span><span class="value">${id}</span></span>
+      <span><span class="label">📅 Data</span><span class="value">${new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'long',year:'numeric'})}</span></span>
+    </div>
+
+    <div>
+      <button class="btn ${isAccept ? 'btn-accept' : 'btn-reject'}" id="confirmBtn">
+        ${isAccept ? '✅ Conferma Accettazione' : '❌ Conferma Rifiuto'}
+      </button>
+    </div>
+    <div style="margin-top:16px;">
+      <a href="index.html" class="btn btn-back">← Torna al sito</a>
+    </div>
+    <div id="status-msg"></div>
+  `;
+
+  // Confetti su accept
+  if (isAccept) {
+    const c = document.getElementById('confetti');
+    c.style.display = 'block';
+    for (let i = 0; i < 60; i++) {
+      const p = document.createElement('div');
+      p.className = 'confetti-piece';
+      p.style.cssText = `
+        left:${Math.random()*100}%;
+        top:${Math.random()*-200}px;
+        background:${['#ff00cc','#9900ff','#00ff88','#ffcc00','#ff4444','#4488ff'][Math.floor(Math.random()*6)]};
+        animation-duration:${Math.random()*3+2}s;
+        animation-delay:${Math.random()*2}s;
+        width:${Math.random()*10+5}px; height:${Math.random()*10+5}px;
+      `;
+      c.appendChild(p);
+    }
+    setTimeout(() => c.style.display = 'none', 5000);
+  }
+
+  document.getElementById('confirmBtn').addEventListener('click', async () => {
+    const webhook = DISCORD_WEBHOOK;
+    const statusEl = document.getElementById('status-msg');
+
+    const confirmBtn = document.getElementById('confirmBtn');
+    confirmBtn.textContent = '⏳ Invio...';
+    confirmBtn.disabled = true;
+
+    const color   = isAccept ? 0x00FF88 : 0xFF4444;
+    const emoji   = isAccept ? '✅' : '❌';
+    const titolo  = isAccept ? '✅ Candidatura ACCETTATA' : '❌ Candidatura RIFIUTATA';
+    const desc    = isAccept
+      ? `La candidatura di **${nome}** è stata **ACCETTATA**!\n\n> 🎉 Contattalo su Discord: \`${discord}\`\n> Dagli il ruolo e aggiungi al server!`
+      : `La candidatura di **${nome}** è stata **RIFIUTATA**.\n\n> 💬 Puoi contattarlo su Discord \`${discord}\` per informarlo.`;
+
+    const payload = {
+      username: "Fuego's Clan — Candidature",
+      embeds: [{
+        title: titolo,
+        description: desc,
+        color: color,
+        fields: [
+          { name: "👤 Candidato", value: `\`${nome}\``, inline: true },
+          { name: "💬 Discord",   value: `\`${discord}\``, inline: true },
+          { name: "📋 ID",        value: `\`${id}\``, inline: true },
+        ],
+        footer: {
+          text: `Fuego's Clan • ${isAccept ? 'Accettato' : 'Rifiutato'} il ${new Date().toLocaleDateString('it-IT')}`
+        },
+        timestamp: new Date().toISOString()
+      }]
+    };
+
+    try {
+      const res = await fetch(webhook, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok || res.status === 204) {
+        statusEl.textContent = `${emoji} Notifica inviata su Discord con successo!`;
+        statusEl.className = 'ok';
+        confirmBtn.textContent = emoji + ' Fatto!';
+      } else {
+        statusEl.textContent = `Errore Discord (${res.status}). Controlla il webhook.`;
+        statusEl.className = 'err';
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = isAccept ? '✅ Conferma Accettazione' : '❌ Conferma Rifiuto';
+      }
+    } catch (err) {
+      statusEl.textContent = 'Errore di rete. Controlla la connessione.';
+      statusEl.className = 'err';
+      confirmBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
